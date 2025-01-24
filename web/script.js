@@ -51,7 +51,7 @@ function CreateMarker (lat,lon){
 
 // Configuración del cliente MQTT
 const mqttConfig = {
-  host: '5.250.190.40', // Cambia si usas un broker diferente
+  host: 'wss://5.250.190.40', // Cambia si usas un broker diferente
   port: 9001,               // Puerto WebSocket del broker
   topic: 'gps/tracker',     // Tema MQTT
 };
