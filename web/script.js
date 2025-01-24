@@ -109,7 +109,6 @@ client.onConnectionLost = function (responseObject) {
 client.connect({
   userName: "IC",
   password:"123456", 
-  useSSL: true,
   onSuccess: () => {
     console.log('Conectado al broker MQTT');
     client.subscribe(mqttConfig.topic); // Suscribir al tema
