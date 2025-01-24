@@ -5,8 +5,14 @@
 SFE_UBLOX_GNSS myGNSS;
 
 long lastTime = 0; //Simple local timer. Limits amount if I2C traffic to u-blox module.
-int errorLat = 0;
-int errorLon = 0;
+
+typedef struct{
+  long latitude ;
+  long longitude ;
+  long altitude ;
+} Coordinates;
+
+Coordinates error;
 
 long latitude = 0;
 long longitude = 0;
@@ -76,23 +82,17 @@ void loop()
     Serial.print(n);
 
     Serial.println();
-    int errorLat = latitude - lastAverageLat;
-    int errorLon = longitude - lastAverageLon;
-    Serial.print("Error latitude: ");
-    Serial.print(errorLat);
-    Serial.print(" Error longitude: ");
-    Serial.println(errorLon);
-    Serial.println("___________________________________");
-    Serial.println();
   }
 }
 
 void getCoordsError(){
-  errorLat = 0;
-  errorLon = 0;
+  error.latitude = 0;
+  error.longitude = 0;
+  error.altitude = 0;
 }
 
 void fixErrorRT(long latitude, long longitude){
-  latitude -= errorLat;
-  longitude -= errorLon;
+  latitude -= error.latitude;
+  longitude -= error.longitude;
+  altitude -= error.altitude;
 }
