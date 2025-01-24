@@ -22,7 +22,7 @@ const ListBalizas = []
 const GPSList = [{id:1,lat:-1,lon:-1,marker: L.marker([-1,-1])},{id:2,lat:-1,lon:-1,marker: L.marker([-1,-1])},{id:3,lat:-1,lon:-1,marker: L.marker([-1,-1])}]
 
 var customIcon = L.icon({
-  iconUrl: '/D:/Yeremay/web/web/gpsBLUE.png', // Path to the icon
+  iconUrl: 'gpsBLUE.png', // Path to the icon
   iconSize: [45, 45], // Size of the icon
   iconAnchor: [45, 45], // Point of the icon that corresponds to marker's location
   popupAnchor: [-23, -40], // Point from which the popup should open relative to the iconAnchor
@@ -108,7 +108,8 @@ client.onConnectionLost = function (responseObject) {
 // Conexión al broker
 client.connect({
   userName: "IC",
-  password:"123456",  
+  password:"123456", 
+  useSSL: true,
   onSuccess: () => {
     console.log('Conectado al broker MQTT');
     client.subscribe(mqttConfig.topic); // Suscribir al tema
