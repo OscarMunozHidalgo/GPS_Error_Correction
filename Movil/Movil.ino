@@ -16,6 +16,7 @@ Coordinates error;
 
 long latitude = 0;
 long longitude = 0;
+long altitude = 0;
 int n = 0;
 
 void setup()
@@ -45,6 +46,7 @@ void loop()
     
     latitude = myGNSS.getLatitude();
     longitude = myGNSS.getLongitude();
+    altitude = myGNSS.getAltitude();
     
     Serial.print(F("Lat: "));
     Serial.print(latitude);
@@ -52,7 +54,7 @@ void loop()
     Serial.print(longitude);
 
     getCoordsError();
-    fixErrorRT(latitude, longitude);
+    fixErrorRT(latitude, longitude, altitude);
 
     long speed = myGNSS.getGroundSpeed();
     Serial.print(F(" Speed: "));
@@ -91,7 +93,7 @@ void getCoordsError(){
   error.altitude = 0;
 }
 
-void fixErrorRT(long latitude, long longitude){
+void fixErrorRT(long latitude, long longitude, long altitude){
   latitude -= error.latitude;
   longitude -= error.longitude;
   altitude -= error.altitude;
