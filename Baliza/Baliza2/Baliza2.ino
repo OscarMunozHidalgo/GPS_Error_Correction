@@ -4,7 +4,7 @@
 #include <Wire.h> //Needed for I2C to GNSS
 #include <SparkFun_u-blox_GNSS_Arduino_Library.h> //http://librarymanager/All#SparkFun_u-blox_GNSS
 
-#define TX_LAPSE_MS          1000
+#define TX_LAPSE_MS          2000
 
 // NOTA: Ajustar estas variables 
 const uint8_t localAddress = 0x33;     // Dirección de este dispositivo
@@ -39,7 +39,7 @@ typedef struct {
 double bandwidth_kHz[10] = {7.8E3, 10.4E3, 15.6E3, 20.8E3, 31.25E3,
                             41.7E3, 62.5E3, 125E3, 250E3, 500E3 };
 
-LoRaConfig_t thisNodeConf   = { 8, 7, 5, 2};
+LoRaConfig_t thisNodeConf   = { 7, 7, 5, 2};
 
 // --------------------------------------------------------------------
 // Setup function
