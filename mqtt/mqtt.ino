@@ -133,8 +133,8 @@ void onReceive(int packetSize)
   buffer[receivedBytes] = '\0';         // Terminamos la cadena
 
   if (incomingLength != receivedBytes) {// Verificamos la longitud del mensaje
-    Serial.print("Receiving error: declared message length " + String(incomingLength));
-    Serial.println(" does not match length " + String(receivedBytes));
+    //Serial.print("Receiving error: declared message length " + String(incomingLength));
+    //Serial.println(" does not match length " + String(receivedBytes));
     return;                             
   }
 
@@ -144,7 +144,7 @@ void onReceive(int packetSize)
   // SyncWord y solo tiene sentido si hay más de dos receptores activos
   // compartiendo la misma palabra de sincronización
   if ((recipient & localAddress) != localAddress ) {
-    Serial.println("Receiving error: This message is not for me.");
+    //Serial.println("Receiving error: This message is not for me.");
     return;
   }
 

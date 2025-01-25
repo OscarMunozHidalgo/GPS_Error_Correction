@@ -46,12 +46,16 @@ try:
             if linea:
                 data = json.loads(linea)
                 if data:
-                    print(data["id"])
+                    print(data["from"])
+                    print(data["lat"])
+                    print(data["lon"])
+                    print(data["SNR"])
                     dataToMQTT = {
                         "type": "GPS",
                         "description": {
                             "lat": data["lat"],
-                            "lon": data["lon"]
+                            "lon": data["lon"],
+                            "id": data["from"]
                         }
                     }
 
