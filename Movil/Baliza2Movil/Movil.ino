@@ -1,15 +1,20 @@
 #include <SPI.h>             
 #include <LoRa.h>
 #include <Arduino_PMIC.h>
+#include <Wire.h> //Needed for I2C to GNSS
+#include <SparkFun_u-blox_GNSS_Arduino_Library.h> //http://librarymanager/All#SparkFun_u-blox_GNSS
 
-#define TX_LAPSE_MS          1000
+
+#define TX_LAPSE_MS          2000
 
 // NOTA: Ajustar estas variables 
 const uint8_t localAddress = 0x32;     // Dirección de este dispositivo
-uint8_t destination = 0x33;            // Dirección de destino, 0xFF es la dirección de broadcast
+uint8_t destination = 0x23;            // Dirección de destino, 0xFF es la dirección de broadcast
 
 volatile bool txDoneFlag = true;       // Flag para indicar cuando ha finalizado una transmisión
 volatile bool transmitting = false;
+
+SFE_UBLOX_GNSS myGNSS;
 
 // Estructura para almacenar la configuración de la radio
 typedef struct {
@@ -22,7 +27,18 @@ typedef struct {
 double bandwidth_kHz[10] = {7.8E3, 10.4E3, 15.6E3, 20.8E3, 31.25E3,
                             41.7E3, 62.5E3, 125E3, 250E3, 500E3 };
 
-LoRaConfig_t thisNodeConf   = { 8, 7, 5, 2};
+LoRaConfig_t thisNodeConf   = { 7, 7, 5, 2};
+
+volatile bool sendNow = false;
+
+typedef struct{
+  long latitude ;
+  long longitude ;
+  byte SIV ;
+} Coordinates;
+
+Coordinates coordinates;
+Coordinates error;
 
 // --------------------------------------------------------------------
 // Setup function
@@ -31,6 +47,13 @@ void setup()
 {
   Serial.begin(115200);  
   while (!Serial); 
+  Wire.begin();
+
+  if (myGNSS.begin() == false) //Connect to the u-blox module using Wire port
+  {
+    Serial.println(F("u-blox GNSS not detected at default I2C address. Please check wiring. Freezing."));
+    while (1);
+  }
 
   Serial.println("LoRa Duplex with TxDone and Receive callbacks");
   Serial.println("Using binary packets");
@@ -93,8 +116,104 @@ void setup()
 // --------------------------------------------------------------------
 // Loop function
 // --------------------------------------------------------------------
-void loop() {
+void loop() 
+{
+  static uint32_t lastSendTime_ms = 0;
+  static uint16_t msgCount = 0;
+  static uint32_t txInterval_ms = TX_LAPSE_MS;
+  static uint32_t tx_begin_ms = 0;
 
+  if (sendNow && !transmitting && ((millis() - lastSendTime_ms) > txInterval_ms)) {
+    sendNow = false;
+    uint8_t payload[50];       // Array para almacenar el payload
+    uint8_t payloadLength = 0; // Longitud inicial del payload
+
+    long lat = myGNSS.getLatitude();
+    long lon = myGNSS.getLongitude();
+
+    Serial.print("Lat medida: "); Serial.println(lat);
+    Serial.print("Lon medida: "); Serial.println(lon);
+    Serial.print("Error Lat medida: "); Serial.println(error.latitude);
+    Serial.print("Error Lon medida: "); Serial.println(error.longitude);
+
+    coordinates.latitude = myGNSS.getLatitude() - error.latitude;
+    coordinates.longitude = myGNSS.getLongitude() - error.longitude;
+
+    error.latitude = 0;
+    error.longitude = 0;
+
+    Serial.println(coordinates.latitude);
+    Serial.println(coordinates.longitude);
+
+    // Añadimos los bytes de la latitud al payload
+    payload[payloadLength++] = coordinates.latitude & 0xFF;          // Byte menos significativo
+    payload[payloadLength++] = (coordinates.latitude >> 8) & 0xFF;
+    payload[payloadLength++] = (coordinates.latitude >> 16) & 0xFF;
+    payload[payloadLength++] = (coordinates.latitude >> 24) & 0xFF; // Byte más significativo
+
+    // Añadimos los bytes de la longitud al payload
+    payload[payloadLength++] = coordinates.longitude & 0xFF;         // Byte menos significativo
+    payload[payloadLength++] = (coordinates.longitude >> 8) & 0xFF;
+    payload[payloadLength++] = (coordinates.longitude >> 16) & 0xFF;
+    payload[payloadLength++] = (coordinates.longitude >> 24) & 0xFF; // Byte más significativo
+
+    payload[payloadLength++] = coordinates.SIV;
+
+    transmitting = true; // Activamos la transmisión
+    txDoneFlag = false;  // Reiniciamos el flag de transmisión
+    tx_begin_ms = millis(); // Tiempo en el que se inició la transmisión
+
+    sendMessage(payload, payloadLength, msgCount); // Enviamos el mensaje
+    Serial.print("Sending packet ");
+    Serial.print(msgCount++);
+    Serial.print(": ");
+    printBinaryPayload(payload, payloadLength);
+  }
+                
+  if (transmitting && txDoneFlag) {
+    uint32_t TxTime_ms = millis() - tx_begin_ms;
+    Serial.print("----> TX completed in ");
+    Serial.print(TxTime_ms);
+    Serial.println(" msecs");
+    
+    // Ajustamos txInterval_ms para respetar un duty cycle del 1% 
+    uint32_t lapse_ms = tx_begin_ms - lastSendTime_ms;
+    lastSendTime_ms = tx_begin_ms; 
+    float duty_cycle = (100.0f * TxTime_ms) / lapse_ms;
+    
+    Serial.print("Duty cycle: ");
+    Serial.print(duty_cycle, 1);
+    Serial.println(" %\n");
+
+    // Solo si el ciclo de trabajo es superior al 1% lo ajustamos
+    if (duty_cycle > 1.0f) {
+      txInterval_ms = TxTime_ms * 100;
+    }
+    
+    transmitting = false;
+    
+    // Reactivamos la recepción de mensajes, que se desactiva
+    // en segundo plano mientras se transmite
+    LoRa.receive();
+  }
+}
+
+// --------------------------------------------------------------------
+// Sending message function
+// --------------------------------------------------------------------
+void sendMessage(uint8_t* payload, uint8_t payloadLength, uint16_t msgCount) 
+{
+  while(!LoRa.beginPacket()) {            // Comenzamos el empaquetado del mensaje
+    delay(10);                            // 
+  }
+  LoRa.write(destination);                // Añadimos el ID del destinatario
+  LoRa.write(localAddress);               // Añadimos el ID del remitente
+  LoRa.write((uint8_t)(msgCount >> 7));   // Añadimos el Id del mensaje (MSB primero)
+  LoRa.write((uint8_t)(msgCount & 0xFF)); 
+  LoRa.write(payloadLength);              // Añadimos la longitud en bytes del mensaje
+  LoRa.write(payload, (size_t)payloadLength); // Añadimos el mensaje/payload 
+  LoRa.endPacket(true);                   // Finalizamos el paquete, pero no esperamos a
+                                          // finalice su transmisión
 }
 
 // --------------------------------------------------------------------
@@ -171,7 +290,7 @@ void printBinaryPayload(uint8_t * payload, uint8_t payloadLength)
   conversor.bytes[2] = payload[1];
   conversor.bytes[3] = payload[0];
   long Lat = conversor.valor;
-  Serial.print("Lat: "); Serial.println(Lat);
+  error.latitude = Lat;
 
   // Procesar los siguientes 4 bytes para la longitud (ajustando endian)
   conversor.bytes[0] = payload[7];
@@ -179,7 +298,8 @@ void printBinaryPayload(uint8_t * payload, uint8_t payloadLength)
   conversor.bytes[2] = payload[5];
   conversor.bytes[3] = payload[4];
   long Long = conversor.valor;
-  Serial.print("Long: "); Serial.println(Long);
+  error.longitude = Long;
 
-  Serial.print("SIV: "); Serial.println(payload[8]);
+  coordinates.SIV = payload[8];
+  sendNow = true;
 }
