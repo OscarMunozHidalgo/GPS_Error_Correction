@@ -19,10 +19,10 @@ L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
 const ListBalizas = [] 
 
 // GPSInfo
-const GPSList = [{id:1,lat:-1,lon:-1,marker: L.marker([-1,-1])},{id:2,lat:-1,lon:-1,marker: L.marker([-1,-1])},{id:3,lat:-1,lon:-1,marker: L.marker([-1,-1])}]
+const GPSList = [{id:23,lat:-1,lon:-1,marker: L.marker([-1,-1])},{id:22,lat:-1,lon:-1,marker: L.marker([-1,-1])},{id:3,lat:-1,lon:-1,marker: L.marker([-1,-1])}]
 
 var customIcon = L.icon({
-  iconUrl: 'gpsBLUE.png', // Path to the icon
+  iconUrl: 'https://e7.pngegg.com/pngimages/839/441/png-clipart-gps-icon-gps-icon-thumbnail.png', // Path to the icon
   iconSize: [45, 45], // Size of the icon
   iconAnchor: [45, 45], // Point of the icon that corresponds to marker's location
   popupAnchor: [-23, -40], // Point from which the popup should open relative to the iconAnchor
@@ -51,7 +51,7 @@ function CreateMarker (lat,lon){
 
 // Configuración del cliente MQTT
 const mqttConfig = {
-  host: 'wss://5.250.190.40', // Cambia si usas un broker diferente
+  host: '5.250.190.40', // Cambia si usas un broker diferente
   port: 9001,               // Puerto WebSocket del broker
   topic: 'gps/tracker',     // Tema MQTT
 };
@@ -67,22 +67,18 @@ function onMessageArrived(message) {
   
   try {
     const data = JSON.parse(message.payloadString); // Esperamos un JSON con lat y lon
-    console.log(ListBalizas)
-    console.log(GPSList[0])
     if(data.type == "GPS"){
-      console.log(data.type)
-      const {lon,lat} = data.description
-      GPSList[0].lat = lon
-      GPSList[0].lon = lat
-      GPSList[0].marker.setLatLng([lat,lon])
+      const {id,lon,lat} = data.description
+      GPSList[0].id = id
+      GPSList[0].lat = lat/10000000
+      GPSList[0].lon = lon/10000000
+      GPSList[0].marker.setLatLng([GPSList[0].lat,GPSList[0].lon = lon/10000000])
       GPSList[0].marker.addTo(map)
       GPSList[0].marker.bindPopup("Cordenadas---> lat:" + GPSList[0].lat + " lon:" + GPSList[0].lon)
+      console.log(GPSList[0])
     }else{
       const {id,lon,lat} = data.description
-      balizafoo = ListBalizas.filter(prop => prop.id == id)
-      console.log(balizafoo)
       if(balizafoo.length == 0){
-        console.log("Crea")
         baliza = createBaliza(id,lon,lat)
         baliza.marker.setLatLng([lat,lon])
         baliza.marker.addTo(map)
@@ -92,9 +88,8 @@ function onMessageArrived(message) {
         balizafoo[0].lon = lon
         balizafoo[0].marker.setLatLng([lat,lon])
       }
+      
     }
-    console.log(ListBalizas)
-    console.log(GPSList[0])
   } catch (error) {
     console.error('Error procesando mensaje MQTT:', error);
   }
