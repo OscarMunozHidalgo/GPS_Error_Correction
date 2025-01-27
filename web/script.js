@@ -19,16 +19,32 @@ L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
 const ListBalizas = [] 
 
 // GPSInfo
-const GPSList = [{id:23,lat:-1,lon:-1,marker: L.marker([-1,-1])},{id:22,lat:-1,lon:-1,marker: L.marker([-1,-1])},{id:3,lat:-1,lon:-1,marker: L.marker([-1,-1])}]
+const GPSList = [{name: "GPS2" ,id:23,lat:-1,lon:-1,marker: L.marker([-1,-1])},{name: "GPS1" , id:22,lat:-1,lon:-1,marker: L.marker([-1,-1])},{name: "GPS3" ,id:32,lat:-1,lon:-1,marker: L.marker([-1,-1])}]
 
-var customIcon = L.icon({
-  iconUrl: 'https://e7.pngegg.com/pngimages/839/441/png-clipart-gps-icon-gps-icon-thumbnail.png', // Path to the icon
+var customIcon1 = L.icon({
+  iconUrl: 'https://github.com/OscarMunozHidalgo/GPS_Error_Correction/blob/main/web/gpsBLUE.png?raw=true', // Path to the icon
   iconSize: [45, 45], // Size of the icon
   iconAnchor: [45, 45], // Point of the icon that corresponds to marker's location
   popupAnchor: [-23, -40], // Point from which the popup should open relative to the iconAnchor
 });
 
-GPSList[0].marker.setIcon(customIcon)
+var customIcon2 = L.icon({
+  iconUrl: 'https://github.com/OscarMunozHidalgo/GPS_Error_Correction/blob/main/web/gpsGREEN.png?raw=true', // Path to the icon
+  iconSize: [45, 45], // Size of the icon
+  iconAnchor: [45, 45], // Point of the icon that corresponds to marker's location
+  popupAnchor: [-23, -40], // Point from which the popup should open relative to the iconAnchor
+});
+
+var customIcon3 = L.icon({
+  iconUrl: 'https://github.com/OscarMunozHidalgo/GPS_Error_Correction/blob/main/web/gpsPURPLE.png?raw=true', // Path to the icon
+  iconSize: [45, 45], // Size of the icon
+  iconAnchor: [45, 45], // Point of the icon that corresponds to marker's location
+  popupAnchor: [-23, -40], // Point from which the popup should open relative to the iconAnchor
+});
+
+GPSList[0].marker.setIcon(customIcon1)
+GPSList[1].marker.setIcon(customIcon2)
+GPSList[2].marker.setIcon(customIcon3)
 
 function createBaliza(id,lon,lat){
   const balizafoo = 
@@ -69,12 +85,12 @@ function onMessageArrived(message) {
     const data = JSON.parse(message.payloadString); // Esperamos un JSON con lat y lon
     if(data.type == "GPS"){
       const {id,lon,lat} = data.description
-      GPSList[0].id = id
-      GPSList[0].lat = lat/10000000
-      GPSList[0].lon = lon/10000000
-      GPSList[0].marker.setLatLng([GPSList[0].lat,GPSList[0].lon = lon/10000000])
-      GPSList[0].marker.addTo(map)
-      GPSList[0].marker.bindPopup("Cordenadas---> lat:" + GPSList[0].lat + " lon:" + GPSList[0].lon)
+      var element = GPSList.find( a => a.id == id)
+      element.lat = lat/10000000
+      element.lon = lon/10000000
+      element.marker.setLatLng([element.lat,element.lon = lon/10000000])
+      element.marker.addTo(map)
+      element.marker.bindPopup("Nombre: " + element.name + " Cordenadas---> lat:" + element.lat + " lon:" + element.lon)
       console.log(GPSList[0])
     }else{
       const {id,lon,lat} = data.description
