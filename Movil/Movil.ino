@@ -27,7 +27,7 @@ typedef struct {
 double bandwidth_kHz[10] = {7.8E3, 10.4E3, 15.6E3, 20.8E3, 31.25E3,
                             41.7E3, 62.5E3, 125E3, 250E3, 500E3 };
 
-LoRaConfig_t thisNodeConf   = { 8, 7, 5, 2};
+LoRaConfig_t thisNodeConf   = { 7, 7, 5, 2};
 
 volatile bool sendNow = false;
 
@@ -254,8 +254,14 @@ void onReceive(int packetSize)
   // Nótese que este mecanismo es complementario al uso de la misma
   // SyncWord y solo tiene sentido si hay más de dos receptores activos
   // compartiendo la misma palabra de sincronización
-  if ((recipient & localAddress) != localAddress ) {
+  if (recipient != 0xFF) {
     Serial.println("Receiving error: This message is not for me.");
+    LoRa.receive();
+    return;
+  }
+
+  if (sender != 0x53) {
+    Serial.println("Mensaje ignorado por no proceder de la baliza fija.");
     LoRa.receive();
     return;
   }
