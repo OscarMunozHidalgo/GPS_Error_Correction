@@ -9,7 +9,7 @@
 
 // NOTA: Ajustar estas variables 
 const uint8_t localAddress = 0x53;     // Dirección de este dispositivo
-uint8_t destination = 0x32;            // Dirección de destino, 0xFF es la dirección de broadcast
+uint8_t destination = 0xFF;            // Dirección de destino, 0xFF es la dirección de broadcast
 
 volatile bool txDoneFlag = true;       // Flag para indicar cuando ha finalizado una transmisión
 volatile bool transmitting = false;
@@ -41,7 +41,7 @@ typedef struct {
 double bandwidth_kHz[10] = {7.8E3, 10.4E3, 15.6E3, 20.8E3, 31.25E3,
                             41.7E3, 62.5E3, 125E3, 250E3, 500E3 };
 
-LoRaConfig_t thisNodeConf   = { 8, 7, 5, 2};
+LoRaConfig_t thisNodeConf   = { 6, 7, 5, 5};
 
 // --------------------------------------------------------------------
 // Setup function
@@ -103,7 +103,7 @@ void setup()
 
   
   // Indicamos el callback para cuando se reciba un paquete
-  LoRa.onReceive(onReceive);
+  //LoRa.onReceive(onReceive);
   
   // Activamos el callback que nos indicará cuando ha finalizado la 
   // transmisión de un mensaje
@@ -224,7 +224,7 @@ void sendMessage(uint8_t* payload, uint8_t payloadLength, uint16_t msgCount)
 // --------------------------------------------------------------------
 // Receiving message function
 // --------------------------------------------------------------------
-void onReceive(int packetSize) 
+/*void onReceive(int packetSize) 
 {
   if (transmitting && !txDoneFlag) txDoneFlag = true;
   
@@ -267,30 +267,30 @@ void onReceive(int packetSize)
   Serial.println("Message ID: " + String(incomingMsgId));
   Serial.println("Payload length: " + String(incomingLength));
   Serial.print("Payload: ");
-  printBinaryPayload(buffer, receivedBytes);
-}
+  //printBinaryPayload(buffer, receivedBytes);
+}*/
 
 void TxFinished()
 {
   txDoneFlag = true;
 }
 
-void printBinaryPayload(uint8_t * payload, uint8_t payloadLength)
+/*void printBinaryPayload(uint8_t * payload, uint8_t payloadLength)
 {
   for (int i = 0; i < payloadLength; i++) {
     Serial.print((payload[i] & 0xF0) >> 4, HEX);
     Serial.print(payload[i] & 0x0F, HEX);
     Serial.print(" ");
   }
-}
+}*/
 
 void calculateAveragePosition(long latitude, long longitude, byte SIV){
   // Hacer media ponderada dependiendo del número de SIV
-  // Hacer eliminación de Outliers después de 100 iteraciones si se salen de el valor máximo de error + x%
+  // Hacer eliminación de Outlayer después de 100 iteraciones si se salen de el valor máximo de error + x%
   double distance = pow((pow(latitude, 2) + pow(longitude, 2)), 0.5);
 
   if(n > 20 && distance > threshold){
-    Serial.println("outlier detected");
+    Serial.println("Outlayer detected");
     return;
   }
 
