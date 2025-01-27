@@ -25,7 +25,6 @@ int n = 0;
 typedef struct{
   long latitude ;
   long longitude ;
-  long altitude ;
 } Coordinates;
 
 Coordinates average;
@@ -131,11 +130,11 @@ void loop()
     Coordinates position;     
     position.latitude = myGNSS.getLatitude();
     position.longitude = myGNSS.getLongitude();
-    position.altitude = myGNSS.getAltitude();
-    calculateAveragePosition(position.latitude, position.longitude, position.altitude);
+    byte SIV = myGNSS.getSIV();
+
+    calculateAveragePosition(position.latitude, position.longitude, SIV);
 
     int pDOP = myGNSS.getPDOP();
-    byte SIV = myGNSS.getSIV();
 
     error.latitude = position.latitude - average.latitude;
     error.longitude = position.longitude - average.longitude;
@@ -285,17 +284,22 @@ void printBinaryPayload(uint8_t * payload, uint8_t payloadLength)
   }
 }
 
-void calculateAveragePosition(long latitude, long longitude, long altitude){
+void calculateAveragePosition(long latitude, long longitude, byte SIV){
   // Hacer media ponderada dependiendo del número de SIV
   // Hacer eliminación de Outliers después de 100 iteraciones si se salen de el valor máximo de error + x%
   double distance = pow((pow(latitude, 2) + pow(longitude, 2)), 0.5);
 
   if(n > 20 && distance > threshold){
+    Serial.println("outlier detected");
+    return;
+  }
+
+  if(SIV <= 5){
+    Serial.println("Not enough SIVS");
     return;
   }
 
   n++;
   average.latitude = average.latitude + (latitude-average.latitude)/n;
   average.longitude = average.longitude + (longitude-average.longitude)/n;
-  average.altitude = average.altitude + (longitude-average.altitude)/n;
 }
