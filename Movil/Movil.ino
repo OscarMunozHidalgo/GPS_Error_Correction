@@ -8,7 +8,7 @@
 #define TX_LAPSE_MS          2000
 
 // NOTA: Ajustar estas variables 
-const uint8_t localAddress = 0x32;     // Dirección de este dispositivo
+const uint8_t localAddress = 0x22;     // Dirección de este dispositivo
 uint8_t destination = 0x23;            // Dirección de destino, 0xFF es la dirección de broadcast
 
 volatile bool txDoneFlag = true;       // Flag para indicar cuando ha finalizado una transmisión
@@ -27,7 +27,7 @@ typedef struct {
 double bandwidth_kHz[10] = {7.8E3, 10.4E3, 15.6E3, 20.8E3, 31.25E3,
                             41.7E3, 62.5E3, 125E3, 250E3, 500E3 };
 
-LoRaConfig_t thisNodeConf   = { 7, 7, 5, 2};
+LoRaConfig_t thisNodeConf   = { 6, 7, 5, 5};
 
 volatile bool sendNow = false;
 
@@ -221,6 +221,7 @@ void sendMessage(uint8_t* payload, uint8_t payloadLength, uint16_t msgCount)
 // --------------------------------------------------------------------
 void onReceive(int packetSize) 
 {
+  Serial.println(String(LoRa.packetRssi())); Serial.println(String(LoRa.packetSnr()));
   if (transmitting && !txDoneFlag) txDoneFlag = true;
   
   if (packetSize == 0) {
@@ -232,6 +233,13 @@ void onReceive(int packetSize)
   uint8_t buffer[10];                   // Buffer para almacenar el mensaje
   int recipient = LoRa.read();          // Dirección del destinatario
   uint8_t sender = LoRa.read();         // Dirección del remitente
+
+  if (sender != 0x53) {
+    Serial.println("Mensaje ignorado por no proceder de la baliza fija.");
+    while (LoRa.available()) LoRa.read(); 
+    LoRa.receive();
+    return;
+  }
                                         // msg ID (High Byte first)
   uint16_t incomingMsgId = ((uint16_t)LoRa.read() << 7) | 
                             (uint16_t)LoRa.read();
@@ -239,8 +247,16 @@ void onReceive(int packetSize)
   uint8_t incomingLength = LoRa.read(); // Longitud en bytes del mensaje
   
   uint8_t receivedBytes = 0;            // Leemos el mensaje byte a byte
+  unsigned long startTime = millis();
+
   while (LoRa.available() && (receivedBytes < uint8_t(sizeof(buffer)-1))) {            
     buffer[receivedBytes++] = (char)LoRa.read();
+    // Salir si pasa demasiado tiempo esperando
+    if (millis() - startTime > 200) { // 1000ms de timeout
+      Serial.println("Tiempo de espera agotado. Limpiando buffer.");
+      while (LoRa.available()) LoRa.read(); // Vaciar buffer
+      break;
+    }
   }
   
   if (incomingLength != receivedBytes) {// Verificamos la longitud del mensaje
@@ -256,12 +272,6 @@ void onReceive(int packetSize)
   // compartiendo la misma palabra de sincronización
   if (recipient != 0xFF) {
     Serial.println("Receiving error: This message is not for me.");
-    LoRa.receive();
-    return;
-  }
-
-  if (sender != 0x53) {
-    Serial.println("Mensaje ignorado por no proceder de la baliza fija.");
     LoRa.receive();
     return;
   }
