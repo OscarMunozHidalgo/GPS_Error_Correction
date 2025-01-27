@@ -143,7 +143,7 @@ void onReceive(int packetSize)
   // Nótese que este mecanismo es complementario al uso de la misma
   // SyncWord y solo tiene sentido si hay más de dos receptores activos
   // compartiendo la misma palabra de sincronización
-  if ((recipient & localAddress) != localAddress ) {
+  if (recipient != localAddress ) {
     //Serial.println("Receiving error: This message is not for me.");
     return;
   }

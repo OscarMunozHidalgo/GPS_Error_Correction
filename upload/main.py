@@ -1,4 +1,5 @@
 import serial
+import serial.tools.list_ports
 import json
 from paho.mqtt import client as mqtt_client
 
@@ -11,11 +12,12 @@ port = 1883
 topic = "gps/tracker"
 user = "IC"
 passw = "123456"
-client_id = 1
+client_id = "1"
+coms_disponibles = []
 # data.type = "GPS"
 # data.description = {"lat":0, "lon":0}
 def connect_mqtt():
-    def on_connect(client, userdata, flags, rc):
+    def on_connect(client, userdata, flags, rc, properties):
     # For paho-mqtt 2.0.0, you need to add the properties parameter.
     # def on_connect(client, userdata, flags, rc, properties):
         if rc == 0:
@@ -23,7 +25,7 @@ def connect_mqtt():
         else:
             print("Failed to connect, return code %d\n", rc)
     # Set Connecting Client ID
-    client = mqtt_client.Client(client_id)
+    client = mqtt_client.Client(client_id=client_id, callback_api_version=mqtt_client.CallbackAPIVersion.VERSION2)
 
     # For paho-mqtt 2.0.0, you need to set callback_api_version.
     # client = mqtt_client.Client(client_id=client_id, callback_api_version=mqtt_client.CallbackAPIVersion.VERSION2)
@@ -31,8 +33,23 @@ def connect_mqtt():
     client.username_pw_set(user, passw)
     client.on_connect = on_connect
     client.connect(broker, port)
+    client.loop_start()
     return client
 
+def select_port():
+    ports = serial.tools.list_ports.comports() 
+    i = 1
+    print("Selecciona uno de los puertos:")
+    for port in ports:
+        print(f"{i} Puerto: {port.device}", end=" ")
+        coms_disponibles.append(port.device)
+        print(f" {port.description}")
+        i += 1
+    valor = int(input(""))
+    PORT = coms_disponibles[valor-1]
+
+
+select_port()
 cliente = connect_mqtt()
 
 try:
