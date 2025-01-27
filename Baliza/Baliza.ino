@@ -5,6 +5,7 @@
 #include <SparkFun_u-blox_GNSS_Arduino_Library.h> //http://librarymanager/All#SparkFun_u-blox_GNSS
 
 #define TX_LAPSE_MS          1000
+#define THRESHOLD_BASE           2000
 
 // NOTA: Ajustar estas variables 
 const uint8_t localAddress = 0x53;     // Dirección de este dispositivo
@@ -12,6 +13,8 @@ uint8_t destination = 0x32;            // Dirección de destino, 0xFF es la dire
 
 volatile bool txDoneFlag = true;       // Flag para indicar cuando ha finalizado una transmisión
 volatile bool transmitting = false;
+
+uint threshold = THRESHOLD_BASE * 2;
 
 SFE_UBLOX_GNSS myGNSS;
 
@@ -285,6 +288,12 @@ void printBinaryPayload(uint8_t * payload, uint8_t payloadLength)
 void calculateAveragePosition(long latitude, long longitude, long altitude){
   // Hacer media ponderada dependiendo del número de SIV
   // Hacer eliminación de Outliers después de 100 iteraciones si se salen de el valor máximo de error + x%
+  double distance = pow((pow(latitude, 2) + pow(longitude, 2)), 0.5);
+
+  if(n > 20 && distance > threshold){
+    return;
+  }
+
   n++;
   average.latitude = average.latitude + (latitude-average.latitude)/n;
   average.longitude = average.longitude + (longitude-average.longitude)/n;
