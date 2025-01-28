@@ -285,11 +285,11 @@ void TxFinished()
 
 void calculateAveragePosition(long latitude, long longitude, byte SIV){
   // Hacer media ponderada dependiendo del número de SIV
-  // Hacer eliminación de Outlayer después de 100 iteraciones si se salen de el valor máximo de error + x%
+  // Hacer eliminación de outlier después de 100 iteraciones si se salen de el valor máximo de error + x%
   double distance = pow((pow(latitude, 2) + pow(longitude, 2)), 0.5);
 
   if(n > 20 && distance > threshold){
-    Serial.println("Outlayer detected");
+    Serial.println("Outlier detected");
     return;
   }
 
