@@ -49,7 +49,6 @@ LoRaConfig_t thisNodeConf   = { 6, 7, 5, 5};
 void setup() 
 {
   Serial.begin(115200);  
-  while (!Serial); 
   Wire.begin();
 
   if (myGNSS.begin() == false) //Connect to the u-blox module using Wire port
